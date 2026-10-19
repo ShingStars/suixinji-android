@@ -1,0 +1,15 @@
+.tools/
+.gradle/
+.kotlin/
+local.properties
+**/build/
+.idea/
+*.jks
+*.keystore
+signing.properties
+deliverables/
+qa/artifacts/
+qa/evidence/
+*.sxj
+Thumbs.db
+.DS_Store
