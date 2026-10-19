@@ -1,4 +1,4 @@
-param([string]$Version='1.1.0',[int]$DeviceTests=14,[int]$UnitTests=22)
+param([string]$Version='1.1.1',[int]$DeviceTests=14,[int]$UnitTests=22)
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 $out=Join-Path $root 'deliverables'
@@ -35,7 +35,7 @@ function CreateZip([string]$path,[System.IO.FileInfo[]]$files,[string]$base){
 }
 $sourceFiles=@()
 foreach($folder in @('app/src','app/schemas','tools','docs','gradle/wrapper')){$sourceFiles+=Get-ChildItem -LiteralPath (Join-Path $root $folder) -Recurse -File}
-foreach($name in @('.gitignore','LICENSE','README.md','THIRD_PARTY_NOTICES.md','settings.gradle.kts','build.gradle.kts','gradle.properties','gradlew','gradlew.bat','app/build.gradle.kts','app/proguard-rules.pro','app/gradle.lockfile','qa/TEST_REPORT.md')){$sourceFiles+=Get-Item -Force -LiteralPath (Join-Path $root $name)}
+foreach($name in @('.gitignore','LICENSE','CHANGELOG.md','README.md','THIRD_PARTY_NOTICES.md','settings.gradle.kts','build.gradle.kts','gradle.properties','gradlew','gradlew.bat','app/build.gradle.kts','app/proguard-rules.pro','app/gradle.lockfile','qa/TEST_REPORT.md','qa/TEST_REPORT_1.0.0.md','qa/TEST_REPORT_1.1.0.md')){$sourceFiles+=Get-Item -Force -LiteralPath (Join-Path $root $name)}
 $sourcePath=Join-Path $out "Suixinji-$Version-source.zip"
 CreateZip $sourcePath $sourceFiles $root
 $check=[IO.Compression.ZipFile]::OpenRead($sourcePath)

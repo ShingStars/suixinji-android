@@ -32,13 +32,13 @@ class Updates(private val context:Context,private val repo:Repository) {
     private val checkMutex=Mutex();private val downloadMutex=Mutex()
     private val prefs=repo.device
     private val latest="https://api.github.com/repos/ShingStars/suixinji-android/releases/latest"
-    private fun open(url:String):HttpURLConnection {
+    private fun open(url:String,accept:String="application/vnd.github+json"):HttpURLConnection {
         var next=url
         repeat(6) {
             require(ReleaseRules.trusted(next)){"更新地址不受信任"}
             val c=URI(next).toURL().openConnection() as HttpURLConnection
             c.connectTimeout=15000;c.readTimeout=30000;c.instanceFollowRedirects=false
-            c.setRequestProperty("Accept","application/vnd.github+json");c.setRequestProperty("User-Agent","Suixinji-Android/${BuildConfig.VERSION_NAME}")
+            c.setRequestProperty("Accept",accept);c.setRequestProperty("X-GitHub-Api-Version","2022-11-28");c.setRequestProperty("User-Agent","Suixinji-Android/${BuildConfig.VERSION_NAME}")
             val status=c.responseCode
             if(status in 300..399){val location=c.getHeaderField("Location") ?: error("更新下载跳转地址缺失");val resolved=URI(next).resolve(location).toString();c.disconnect();next=resolved}
             else {if(status!=200){c.disconnect();error(if(status==403 || status==429) "GitHub 暂时限制请求，请稍后重试" else "更新服务暂不可用（$status）")};return c}
@@ -58,10 +58,10 @@ class Updates(private val context:Context,private val repo:Repository) {
             if(!ReleaseRules.newer(tag,BuildConfig.VERSION_NAME)){state.value=UpdateState(message="当前已是最新正式版本（${BuildConfig.VERSION_NAME}）");return@withLock}
             val asset=json["assets"]!!.jsonArray.map {it.jsonObject}.singleOrNull {it["name"]?.jsonPrimitive?.content=="Suixinji-${tag.removePrefix("v")}.apk"} ?: error("新版尚未提供匹配的安装包")
             val digest=ReleaseRules.digest(asset["digest"]?.jsonPrimitive?.content.orEmpty()) ?: error("新版缺少 SHA-256 校验信息，请前往发布页查看")
-            val release=AppRelease(tag,json["body"]?.jsonPrimitive?.content.orEmpty().take(30000),"https://github.com/ShingStars/suixinji-android/releases/tag/$tag",asset["browser_download_url"]!!.jsonPrimitive.content,digest,asset["size"]!!.jsonPrimitive.long)
+            val release=AppRelease(tag,json["body"]?.jsonPrimitive?.content.orEmpty().take(30000),"https://github.com/ShingStars/suixinji-android/releases/tag/$tag",asset["url"]!!.jsonPrimitive.content,digest,asset["size"]!!.jsonPrimitive.long)
             require(ReleaseRules.trusted(release.apk) && release.size in 1..150L*1024*1024){"新版安装包信息异常"}
             state.value=UpdateState(release=release,message="发现新版本 $tag",automaticPrompt=automatic && prefs.getString("ignored_version","")!=tag)
-        } catch(e:Exception) {state.value=UpdateState(message="检查失败：${e.message?.take(120) ?: "请检查网络"}")}
+        } catch(e:Exception) {state.value=UpdateState(message=if(e is java.io.IOException) "检查失败：暂时无法连接 GitHub，请检查网络后重试" else "检查失败：${e.message?.take(120) ?: "请检查网络"}")}
     }}
     fun dismiss(ignore:Boolean=false){if(ignore)state.value.release?.let {prefs.edit().putString("ignored_version",it.tag).apply()};state.value=state.value.copy(automaticPrompt=false)}
     suspend fun download()=withContext(Dispatchers.IO) {downloadMutex.withLock {
@@ -69,13 +69,13 @@ class Updates(private val context:Context,private val repo:Repository) {
         val folder=File(context.cacheDir,"updates").apply {mkdirs()};val part=File(folder,"update.part");val apk=File(folder,"suixinji-update.apk")
         state.value=state.value.copy(downloading=true,progress=0,message="正在下载…",apk=null,automaticPrompt=false)
         try {
-            val connection=open(release.apk);val digest=MessageDigest.getInstance("SHA-256");var count=0L
+            val connection=open(release.apk,"application/octet-stream");val digest=MessageDigest.getInstance("SHA-256");var count=0L
             try {connection.inputStream.use {input->part.outputStream().use {out->val buffer=ByteArray(32768);while(true){val n=input.read(buffer);if(n<0)break;count+=n;require(count<=release.size){"安装包大小异常"};out.write(buffer,0,n);digest.update(buffer,0,n);state.value=state.value.copy(progress=(count*100/release.size).toInt())}}}}finally {connection.disconnect()}
             require(count==release.size && digest.digest().joinToString(""){"%02x".format(it)}==release.digest){"安装包校验失败，请重新下载"}
             verifyApk(part)
             if(apk.exists())check(apk.delete());check(part.renameTo(apk))
             state.value=state.value.copy(downloading=false,apk=apk,message="下载及签名校验通过，点击安装更新")
-        } catch(e:Exception){part.delete();state.value=state.value.copy(downloading=false,message="下载失败：${e.message?.take(120)}")}
+        } catch(e:Exception){part.delete();state.value=state.value.copy(downloading=false,message=if(e is java.io.IOException) "GitHub 下载暂不可达，请切换网络重试，或打开发布页下载" else "下载失败：${e.message?.take(120)}")}
     }}
     @Suppress("DEPRECATION") fun verifyApk(file:File) {
         val pm=context.packageManager

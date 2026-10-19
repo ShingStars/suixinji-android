@@ -84,7 +84,7 @@ class UpdateInstrumentedTest {
     @Test fun updateScreenAndSignatureMismatch(){
         compose.onNodeWithTag("nav-4").performClick()
         compose.onNodeWithText("检查更新").performScrollTo().performClick()
-        compose.onNodeWithText("当前版本 1.1.0").assertExists()
+        compose.onNodeWithText("当前版本 ${BuildConfig.VERSION_NAME}").assertExists()
         compose.onNodeWithText("自动检查正式版").assertExists()
         // A current-version package must never be accepted as an upgrade.
         val own=File(compose.activity.applicationInfo.sourceDir)

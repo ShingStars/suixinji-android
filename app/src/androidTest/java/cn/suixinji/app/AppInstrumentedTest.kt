@@ -168,7 +168,9 @@ class AppInstrumentedTest {
         repo.device.edit().putBoolean("app_lock",true).commit()
         try {
             repo.reminders.show("私人日程标题","私人日程备注","event","privacy-test",today())
-            val notifications=app.getSystemService(android.app.NotificationManager::class.java).activeNotifications
+            val manager=app.getSystemService(android.app.NotificationManager::class.java)
+            compose.waitUntil(10000){manager.activeNotifications.any{it.id==("event"+"privacy-test"+today()).hashCode()}}
+            val notifications=manager.activeNotifications
             val n=notifications.first{it.id==("event"+"privacy-test"+today()).hashCode()}.notification
             assertEquals("随心记提醒",n.extras.getString(android.app.Notification.EXTRA_TITLE))
             assertEquals("打开应用查看",n.extras.getString(android.app.Notification.EXTRA_TEXT))
