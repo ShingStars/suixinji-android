@@ -30,7 +30,7 @@ import java.time.format.DateTimeFormatter
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=22.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
         PageTitle("照顾日常，也照顾自己","我的随心记")
         PaperCard {
-            Row(verticalAlignment=Alignment.CenterVertically) { Icon(Icons.Rounded.AutoStories,null,Modifier.size(35.dp),tint=MaterialTheme.colorScheme.primary); Column(Modifier.padding(start=15.dp)) { Text("生活的记录者",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold); Text("${data.diaries.size} 篇日记 · ${data.habits.size} 个习惯",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) } }
+            Row(Modifier.fillMaxWidth().clickable {push(Overlay.Profile)}.padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically) { ProfileAvatar(vm,data.settings.avatar,Modifier.size(62.dp)); Column(Modifier.weight(1f).padding(start=15.dp)) { Text(data.settings.nickname.ifBlank {"点击编辑昵称"},style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold); if(data.settings.signature.isNotBlank())Text(data.settings.signature,style=MaterialTheme.typography.bodySmall); Text("${data.diaries.size} 篇日记 · ${data.habits.size} 个习惯",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) };Icon(Icons.Rounded.Edit,"编辑个人资料",Modifier.size(18.dp)) }
         }
         PaperCard {
             Text("外观",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.SemiBold)
@@ -51,7 +51,7 @@ import java.time.format.DateTimeFormatter
             HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant)
             MenuRow(Icons.Rounded.DeleteOutline,"回收站","${data.trashed.size} 项 · 保留 30 天") {push(Overlay.Recycle)}
         }
-        PaperCard {MenuRow(Icons.Rounded.Info,"关于随心记","1.0.0 · 数据留在你的设备里") {push(Overlay.About)}}
+        PaperCard {MenuRow(Icons.Rounded.SystemUpdate,"检查更新","GitHub 正式版本 · 自行选择是否更新") {push(Overlay.Updates)};HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant);MenuRow(Icons.Rounded.Info,"关于随心记","${cn.suixinji.app.BuildConfig.VERSION_NAME} · 数据留在你的设备里") {push(Overlay.About)}}
         Text("不必把每一天都填满。",Modifier.fillMaxWidth().padding(vertical=16.dp),textAlign=androidx.compose.ui.text.style.TextAlign.Center,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -128,7 +128,7 @@ import java.time.format.DateTimeFormatter
         Text(if(last==0L) "当前使用安装包内置数据" else "最后成功更新："+Instant.ofEpochMilli(last).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),style=MaterialTheme.typography.bodySmall)
         Text(status,color=MaterialTheme.colorScheme.primary)
         Button(onClick={vm.run {vm.message(h.refresh())}},enabled=!status.startsWith("正在")) {Icon(Icons.Rounded.Refresh,null);Text(" 立即更新")}
-        Text("仅此功能联网，不上传日记、日程、打卡或其他个人内容。每七天最多自动检查一次；更新失败继续使用本地缓存。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("节假日联网请求公开数据，不上传日记、日程或打卡。每七天最多自动检查一次；更新失败继续使用本地缓存。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         for(year in LocalDate.now().year-1..LocalDate.now().year+1) {
             Text("$year 年：${if(h.available(year)) "已有安排" else "调休数据暂未获取"}",style=MaterialTheme.typography.titleSmall)
             h.sources(year).forEach {url->TextButton(onClick={runCatching{context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}}){Text("查看国务院公告")}}
@@ -138,14 +138,15 @@ import java.time.format.DateTimeFormatter
 }
 @Composable fun AboutDialog(vm:AppViewModel,onClose:()->Unit) {
     FormDialog("关于随心记",onClose) {
-        Text("随心记 1.0.0",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.SemiBold)
+        Text("随心记 ${cn.suixinji.app.BuildConfig.VERSION_NAME}",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.SemiBold)
         Text("日常与心事，妥善收藏。")
         Text("隐私说明",fontWeight=FontWeight.SemiBold)
         Text("无需注册，无广告，无行为分析。个人记录保存在应用私有目录，系统自动备份和迁移已关闭。卸载或清除应用数据会移除本地记录，请先导出加密备份。应用锁控制访问，不替代手机的系统安全保护。")
+        Text("联网范围：节假日数据、GitHub 版本检查与用户确认后的下载；教务导入由用户操作校方网页，登录数据直接交给校方，不由随心记存储或上传。头像、昵称与签名仅保存在本机并纳入加密备份。")
         Text("数据与时间",fontWeight=FontWeight.SemiBold)
         Text("日历以周一为每周开始。课程按教学周运行，不自动随法定调休变动。时区变化后日程和课程保持本地钟点；历史日记、打卡和专注统计保留原记录日期。")
         Text("开源致谢",fontWeight=FontWeight.SemiBold)
-        Text("Kotlin、Android Jetpack Compose、Material 3、Room、AndroidX Biometric、kotlinx.coroutines、kotlinx.serialization（Apache 2.0）；NateScarlet/holiday-cn（MIT）。")
+        Text("Kotlin、Android Jetpack Compose、Material 3、Room、AndroidX Biometric、kotlinx.coroutines、kotlinx.serialization（Apache 2.0）；jsoup（MIT）；NateScarlet/holiday-cn（MIT）。")
         val license=remember {runCatching{vm.app.assets.open("holidays/LICENSE.txt").bufferedReader().use{it.readText()}}.getOrDefault("MIT License · Copyright (c) 2019 NateScarlet")}
         Text(license,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }

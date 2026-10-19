@@ -40,6 +40,22 @@ class Repository(val context: Context, val scope: CoroutineScope) {
     suspend fun saveTerm(t: Term) { put(t.id,"term",t) }
     suspend fun saveCourse(c: Course) { put(c.id,"course",c) }
     suspend fun saveSettings(s: Settings) { put("settings","settings",s) }
+    suspend fun saveProfile(nickname:String,signature:String,avatar:String?) = mutation.withLock {
+        require(nickname.codePointCount(0,nickname.length)<=10 && signature.codePointCount(0,signature.length)<=30)
+        saveSettings(snapshotData().settings.copy(nickname=nickname.trim(),signature=signature.trim(),avatar=avatar))
+    }
+    suspend fun importCourses(termId:String,courses:List<Course>,replace:Boolean):Int = mutation.withLock {
+        val data=snapshotData(); val term=data.terms.find {it.id==termId} ?: error("学期已删除，请重新选择")
+        require(courses.isNotEmpty() && courses.size<=2000)
+        require(courses.all {it.termId==termId && it.title.isNotBlank() && it.weekday in 1..7 && it.fromSlot>=1 && it.toSlot in it.fromSlot..term.slots.size && it.weeks.isNotEmpty() && it.weeks.all {w->w in 1..term.weeks}}) {"导入课程超出学期节次或周数，请先调整学期设置"}
+        val existing=data.courses.filter {it.termId==termId}; val keys=(if(replace) emptyList() else existing).map {cn.suixinji.app.domain.CourseImport.key(it)}.toMutableSet()
+        val additions=courses.filter { keys.add(cn.suixinji.app.domain.CourseImport.key(it)) }
+        db.withTransaction {
+            if(replace) {val timestamp=System.currentTimeMillis();val rows=dao.all();existing.forEach { c-> children(c.id,rows).forEach {id->dao.trash(id,timestamp)} }}
+            additions.forEach { saveCourse(it.copy(id=newId())) }
+        }
+        additions.size
+    }
     suspend fun toggleComplete(item: AgendaItem) {
         if(item.kind != "event") return
         val current = snapshotData().occurrences.find { it.id == item.id }
@@ -101,7 +117,8 @@ class Repository(val context: Context, val scope: CoroutineScope) {
         cleanupImages()
     }
     suspend fun cleanupImages(graceMillis:Long=86400000) {
-        val used = AppData(dao.all().map { it.copy(deletedAt=null) }).diaries.flatMap { it.images }.toSet()
+        val data=AppData(dao.all().map { it.copy(deletedAt=null) })
+        val used = (data.diaries.flatMap { it.images }+listOfNotNull(data.settings.avatar)).toSet()
         // Keep newly imported autosave attachments until they are at least a day old.
         attachments.listFiles()?.filter { it.name !in used && System.currentTimeMillis()-it.lastModified()>=graceMillis }?.forEach { it.delete() }
     }

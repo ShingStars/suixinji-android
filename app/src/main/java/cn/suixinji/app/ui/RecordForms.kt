@@ -107,9 +107,9 @@ import java.time.LocalDate
         OutlinedButton(onClick={picker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},enabled=!importing) { Icon(Icons.Rounded.AddPhotoAlternate,null); Spacer(Modifier.width(8.dp)); Text("添加图片") }
     }
 }
-@Composable fun LocalImage(file:File,modifier:Modifier=Modifier) {
-    val bitmap by produceState<android.graphics.Bitmap?>(null,file.path) { value=withContext(Dispatchers.IO) { runCatching { BitmapFactory.decodeFile(file.path,BitmapFactory.Options().apply { inSampleSize=4 }) }.getOrNull() } }
-    Surface(modifier,shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surfaceVariant) { bitmap?.let { Image(it.asImageBitmap(),"日记图片",Modifier.fillMaxSize(),contentScale=ContentScale.Crop) } }
+@Composable fun LocalImage(file:File,modifier:Modifier=Modifier,description:String="日记图片",scale:ContentScale=ContentScale.Crop,sample:Int=4) {
+    val bitmap by produceState<android.graphics.Bitmap?>(null,file.path,sample) { value=withContext(Dispatchers.IO) { runCatching { BitmapFactory.decodeFile(file.path,BitmapFactory.Options().apply { inSampleSize=sample }) }.getOrNull() } }
+    Surface(modifier,shape=RoundedCornerShape(14.dp),color=MaterialTheme.colorScheme.surfaceVariant) { bitmap?.let { Image(it.asImageBitmap(),description,Modifier.fillMaxSize(),contentScale=scale) } }
 }
 
 @Composable fun HabitEditor(vm:AppViewModel,habit:Habit,onClose:()->Unit) {

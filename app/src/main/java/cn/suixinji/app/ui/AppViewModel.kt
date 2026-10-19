@@ -14,6 +14,8 @@ class AppViewModel(application:Application):AndroidViewModel(application) {
     val app=application as SuixinjiApplication
     val repo=app.repository
     val backup=Backup(app,repo)
+    var tableTerm:String?=null
+    val tableWeeks=mutableMapOf<String,Int>()
     val messages=Channel<String>(Channel.BUFFERED)
     val messageFlow=messages.receiveAsFlow()
     init { viewModelScope.launch { while(isActive) { delay(1000); repo.reconcileTimer() } } }

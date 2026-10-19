@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>匿名课表结构测试</title></head><body>
+<!-- Synthetic reconstruction. No source identities, scripts, state, URLs, or private course text. Duplicate tables deliberately exercise deduplication. -->
+<table data-fixture="1">
+<tr><td rowspan="1" colspan="2">时间</td><td>星期一</td><td>星期二</td><td>星期三</td><td>星期四</td><td>星期五</td><td>星期六</td><td>星期日</td></tr>
+<tr><td colspan="2">早晨</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td rowspan="5">上午</td><td>第1节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="2">示例课程1<br>周日第1,2节{第2-17周}<br>示例教师1<br>示例教室1</td></tr>
+<tr><td>第2节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第3节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="3">示例课程2<br>周四第3,4,5节{第1-17周}<br>示例教师2<br>示例教室2<br><br>示例课程3<br>周四第3节{第20-20周}<br>示例教师3<br></td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="2">示例课程4<br>周日第3,4节{第1-17周}<br>示例教师4<br>示例教室3</td></tr>
+<tr><td>第4节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第5节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td rowspan="4">下午</td><td>第6节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="2">示例课程5<br>周四第6,7节{第1-17周}<br>示例教师5<br>示例教室4</td><td rowspan="2">示例课程6<br>周五第6,7节{第1-17周}<br>示例教师6<br>示例教室5</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第7节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第8节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>示例课程6<br>周五第8节{第1-17周}<br>示例教师6<br>示例教室5</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第9节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td rowspan="3">晚上</td><td>第10节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第11节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第12节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+</table>
+<table data-fixture="2">
+<tr><td rowspan="1" colspan="2">时间</td><td>星期一</td><td>星期二</td><td>星期三</td><td>星期四</td><td>星期五</td><td>星期六</td><td>星期日</td></tr>
+<tr><td colspan="2">早晨</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td rowspan="5">上午</td><td>第1节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="2">示例课程1<br>周日第1,2节{第2-17周}<br>示例教师1<br>示例教室1</td></tr>
+<tr><td>第2节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第3节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="3">示例课程2<br>周四第3,4,5节{第1-17周}<br>示例教师2<br>示例教室2<br><br>示例课程3<br>周四第3节{第20-20周}<br>示例教师3<br></td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="2">示例课程4<br>周日第3,4节{第1-17周}<br>示例教师4<br>示例教室3</td></tr>
+<tr><td>第4节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第5节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td rowspan="4">下午</td><td>第6节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td rowspan="2">示例课程5<br>周四第6,7节{第1-17周}<br>示例教师5<br>示例教室4</td><td rowspan="2">示例课程6<br>周五第6,7节{第1-17周}<br>示例教师6<br>示例教室5</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第7节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第8节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>示例课程6<br>周五第8节{第1-17周}<br>示例教师6<br>示例教室5</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第9节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td rowspan="3">晚上</td><td>第10节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第11节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>第12节</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+</table>
+</body></html>

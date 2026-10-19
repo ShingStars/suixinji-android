@@ -57,7 +57,9 @@ fun today(): String = LocalDate.now().toString()
 @Serializable data class Settings(
     val theme: String = "system", val focusMinutes: Int = 25, val shortMinutes: Int = 5, val longMinutes: Int = 15,
     val rounds: Int = 4, val eventNotifications: Boolean = true, val courseNotifications: Boolean = true,
-    val habitNotifications: Boolean = true, val focusNotifications: Boolean = true
+    val habitNotifications: Boolean = true, val focusNotifications: Boolean = true,
+    val nickname: String = "生活的记录者", val signature: String = "", val avatar: String? = null,
+    val autoCheckUpdates: Boolean = true
 )
 @Serializable data class StoredRow(val id: String, val kind: String, val payload: String, val deletedAt: Long? = null)
 @Serializable data class Snapshot(val formatVersion: Int = 1, val createdAt: Long = System.currentTimeMillis(), val rows: List<StoredRow>)

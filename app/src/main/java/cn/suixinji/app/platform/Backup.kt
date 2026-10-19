@@ -71,7 +71,7 @@ class Backup(private val context:Context,private val repo:Repository) {
     private suspend fun makeZip(file:File) {
         val rows=repo.dao.all().filter { it.kind!="timer" }
         val data=AppData(rows.map { it.copy(deletedAt=null) })
-        val names=data.diaries.flatMap { it.images }.toSet()
+        val names=(data.diaries.flatMap { it.images }+listOfNotNull(data.settings.avatar)).toSet()
         ZipOutputStream(file.outputStream().buffered()).use { zip ->
             zip.putNextEntry(ZipEntry("manifest.json")); zip.write(codec.encodeToString(Snapshot(rows=rows.map { it.stored() })).toByteArray()); zip.closeEntry()
             names.forEach { name ->
@@ -149,7 +149,7 @@ class Backup(private val context:Context,private val repo:Repository) {
                 "course" -> { val x=codec.decodeFromString<Course>(r.payload); require(x.id==r.id && x.weekday in 1..7 && x.fromSlot>0 && x.toSlot>=x.fromSlot) }
                 "occurrence" -> { val x=codec.decodeFromString<Occurrence>(r.payload); require(x.id==r.id); LocalDateCheck.check(x.date); if(x.kind=="event") { x.replacement?.let { codec.decodeFromString<Event>(it) }; x.snapshot?.let { codec.decodeFromString<Event>(it) } } else x.replacement?.let { codec.decodeFromString<Course>(it) } }
                 "focus" -> { val x=codec.decodeFromString<FocusSession>(r.payload); require(x.id==r.id && x.seconds>=0); LocalDateCheck.check(x.date) }
-                "settings" -> { val x=codec.decodeFromString<Settings>(r.payload); require(r.id=="settings" && x.focusMinutes in 1..240 && x.shortMinutes in 1..240 && x.longMinutes in 1..240 && x.rounds in 1..12) }
+                "settings" -> { val x=codec.decodeFromString<Settings>(r.payload); require(r.id=="settings" && x.focusMinutes in 1..240 && x.shortMinutes in 1..240 && x.longMinutes in 1..240 && x.rounds in 1..12); require(x.nickname.codePointCount(0,x.nickname.length)<=10 && x.signature.codePointCount(0,x.signature.length)<=30); x.avatar?.let { require(it.matches(Regex("[a-f0-9-]{36}\\.jpg")) && File(stage,it).isFile) {"头像附件不完整"} } }
                 else -> error("备份包含不支持的记录类型")
             }
         }

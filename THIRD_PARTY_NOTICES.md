@@ -5,3 +5,4 @@ The Android application uses Kotlin, Jetpack Compose, Material 3, AndroidX Activ
 The bundled holiday data is derived from NateScarlet/holiday-cn, Copyright (c) 2019 NateScarlet, licensed under the MIT License. Its full license is included at `app/src/main/assets/holidays/LICENSE.txt`. Annual JSON files contain the original State Council publication links. The data provider is an independent open-source project, not an official government API.
 
 The JDK, Android SDK, Gradle distribution, emulator, build caches and signing keys are local development tools and are excluded from the source archive and APK.
+The HTML timetable parser uses jsoup 1.18.3, Copyright (c) 2009-2024 Jonathan Hedley, under the MIT License. The full license is included at `app/src/main/assets/licenses/JSOUP-MIT.txt` and inside the APK.

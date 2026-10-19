@@ -40,7 +40,7 @@ class AppInstrumentedTest {
         compose.onNodeWithTag("diary-body").performTextInput("离线记录也会自动保存。")
         compose.onNodeWithText("完成").performClick()
         waitData{it.diaries.any{d->d.body.contains("离线记录")}}
-        compose.onNodeWithText("记录",useUnmergedTree=false).performClick()
+        compose.onNodeWithTag("nav-2").performClick()
         compose.onNodeWithText("验收日记").assertExists()
         compose.onNodeWithText("习惯打卡").performClick()
         compose.onNodeWithContentDescription("新建习惯").performClick()
@@ -50,8 +50,8 @@ class AppInstrumentedTest {
         compose.onNodeWithText("每日阅读").performClick()
         compose.onNodeWithText("记录打卡").performScrollTo().performClick()
         waitData{it.logs.isNotEmpty()}
-        compose.onNodeWithContentDescription("关闭").performClick()
-        compose.onNodeWithText("专注",useUnmergedTree=false).performClick()
+        compose.onAllNodesWithContentDescription("关闭").onLast().performClick()
+        compose.onNodeWithTag("nav-3").performClick()
         compose.onNodeWithText("开始专注").performScrollTo().performSemanticsAction(SemanticsActions.OnClick){it()}
         waitData{it.timer?.running==true}
         compose.onNodeWithText("暂停",substring=false).performScrollTo().performSemanticsAction(SemanticsActions.OnClick){it()}
@@ -90,17 +90,17 @@ class AppInstrumentedTest {
         assertEquals("数学",Rules.agenda(repo.snapshotData(),monday).single().title)
     }
     @Test fun createTermAndCourseThroughForms() {
-        compose.onNodeWithText("我的").performClick()
+        compose.onNodeWithTag("nav-4").performClick()
         compose.onNodeWithText("学期管理").performScrollTo().performClick()
         compose.onNodeWithText("新建学期").performClick()
         compose.onNodeWithTag("学期名称").performTextClearance()
         compose.onNodeWithTag("学期名称").performTextInput("界面验收学期")
         compose.onNodeWithText("保存").performClick()
         waitData{it.terms.isNotEmpty()}
-        compose.onNodeWithContentDescription("关闭").performClick()
-        compose.onNodeWithText("日历").performClick()
+        compose.onAllNodesWithContentDescription("关闭").onLast().performClick()
+        compose.onNodeWithTag("nav-1").performClick()
         compose.onNodeWithContentDescription("课程表").performClick()
-        compose.onNodeWithText("添加课程").performScrollTo().performSemanticsAction(SemanticsActions.OnClick){it()}
+        compose.onNodeWithContentDescription("添加课程").performClick()
         compose.waitUntil(10000){compose.onAllNodesWithTag("课程名称").fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithTag("课程名称").performTextInput("界面数学课")
         compose.onNodeWithText("保存").performClick()
@@ -156,7 +156,7 @@ class AppInstrumentedTest {
         val diary=Diary(title="清空验收",body="这段内容将被清空")
         runBlocking{repo.saveDiary(diary)}
         waitData{it.diaries.any{d->d.id==diary.id}}
-        compose.onNodeWithText("记录").performClick()
+        compose.onNodeWithTag("nav-2").performClick()
         compose.onNodeWithText("清空验收").performSemanticsAction(SemanticsActions.OnClick){it()}
         compose.onNodeWithTag("标题（可留空）").performTextClearance()
         compose.onNodeWithTag("diary-body").performTextClearance()

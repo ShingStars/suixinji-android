@@ -9,6 +9,9 @@ import android.provider.Settings as SystemSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -43,6 +46,8 @@ sealed interface Overlay {
     data object Recycle:Overlay
     data object HolidayInfo:Overlay
     data object About:Overlay
+    data object Profile:Overlay
+    data object Updates:Overlay
 }
 
 @Composable fun SuixinjiRoot(activity:MainActivity,vm:AppViewModel=viewModel()) {
@@ -65,7 +70,7 @@ sealed interface Overlay {
             LaunchedEffect(Unit) {activity.authenticate {_,message->authError=message}}
         } else if(!ready) Surface(Modifier.fillMaxSize()) {Box(contentAlignment=Alignment.Center){CircularProgressIndicator()}}
         else {
-            var nav by remember {mutableIntStateOf(0)}; var recordTab by remember {mutableIntStateOf(0)}
+            val pager=rememberPagerState(pageCount={5}); val scope=rememberCoroutineScope(); val navigate:(Int)->Unit={scope.launch {pager.animateScrollToPage(it)}}; val nav=pager.currentPage; var recordTab by remember {mutableIntStateOf(0)}
             var selectedDate by remember {mutableStateOf(LocalDate.now())}; var focusEvent by remember {mutableStateOf<Event?>(null)}
             val overlays=remember {mutableStateListOf<Overlay>()}; val snackbar=remember {SnackbarHostState()}
             var delete by remember {mutableStateOf<Pair<String,String>?>(null)}
@@ -78,9 +83,9 @@ sealed interface Overlay {
                 request?.let { r ->
                     overlays.clear()
                     when(r.kind) {
-                        "timer"->nav=3
-                        "habit"->{nav=2;recordTab=1;if(data.habits.any {it.id==r.owner}) push(Overlay.HabitInfo(r.owner))}
-                        else->{nav=1;selectedDate=runCatching {LocalDate.parse(r.date)}.getOrDefault(LocalDate.now());Rules.agenda(data,selectedDate).find {it.ownerId==r.owner}?.let {push(Overlay.Item(it))}}
+                        "timer"->navigate(3)
+                        "habit"->{navigate(2);recordTab=1;if(data.habits.any {it.id==r.owner}) push(Overlay.HabitInfo(r.owner))}
+                        else->{navigate(1);selectedDate=runCatching {LocalDate.parse(r.date)}.getOrDefault(LocalDate.now());Rules.agenda(data,selectedDate).find {it.ownerId==r.owner}?.let {push(Overlay.Item(it))}}
                     }
                     activity.requests.value=null
                 }
@@ -95,13 +100,14 @@ sealed interface Overlay {
             Scaffold(containerColor=MaterialTheme.colorScheme.background,snackbarHost={SnackbarHost(snackbar)},bottomBar={
                 NavigationBar(containerColor=MaterialTheme.colorScheme.surface,tonalElevation=0.dp) {
                     val icons=listOf(Icons.Rounded.WbSunny,Icons.Rounded.CalendarMonth,Icons.Rounded.MenuBook,Icons.Rounded.HourglassTop,Icons.Rounded.PersonOutline)
-                    listOf("今天","日历","记录","专注","我的").forEachIndexed { i,name->NavigationBarItem(selected=nav==i,onClick={nav=i},icon={Icon(icons[i],name)},label={Text(name)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.primaryContainer)) }
+                    listOf("今天","日历","记录","专注","我的").forEachIndexed { i,name->NavigationBarItem(modifier=Modifier.testTag("nav-$i"),selected=nav==i,onClick={navigate(i)},icon={Icon(icons[i],name)},label={Text(name)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.primaryContainer)) }
                 }
             }) { padding ->
                 Box(Modifier.padding(padding).fillMaxSize(),contentAlignment=Alignment.TopCenter) {
                     Box(Modifier.fillMaxSize().widthIn(max=680.dp)) {
-                        when(nav) {
-                            0->TodayScreen(vm,data,vm.app.holidays,{push(Overlay.EditEvent(Event()))},{push(Overlay.EditDiary(Diary()))},{nav=2;recordTab=1},{push(Overlay.Item(it))},{focusEvent=it;nav=3},{push(Overlay.Table)},{push(Overlay.HabitInfo(it.id))})
+                        HorizontalPager(state=pager,modifier=Modifier.fillMaxSize().testTag("main-pages"),userScrollEnabled=overlays.isEmpty()) { page ->
+                        when(page) {
+                            0->TodayScreen(vm,data,vm.app.holidays,{push(Overlay.EditEvent(Event()))},{push(Overlay.EditDiary(Diary()))},{navigate(2);recordTab=1},{push(Overlay.Item(it))},{focusEvent=it;navigate(3)},{push(Overlay.Table)},{push(Overlay.HabitInfo(it.id))})
                             1->CalendarScreen(vm,data,vm.app.holidays,selectedDate,{selectedDate=it},{push(Overlay.EditEvent(Event(date=selectedDate.toString())))},{push(Overlay.Item(it))},{push(Overlay.EditDiary(it))},{push(Overlay.HabitInfo(it.id))},{push(Overlay.Table)})
                             2->RecordsScreen(vm,data,recordTab,{recordTab=it},{push(Overlay.EditDiary(Diary()))},{push(Overlay.EditDiary(it))},{push(Overlay.EditHabit(Habit()))},{push(Overlay.HabitInfo(it.id))},{id,title->delete=id to title})
                             3->FocusScreen(vm,data,{push(Overlay.FocusOptions)},{id,title->delete=id to title},focusEvent)
@@ -113,6 +119,7 @@ sealed interface Overlay {
                     }
                 }
             }
+            }
             when(val overlay=overlays.lastOrNull()) {
                 is Overlay.EditEvent->EventEditor(vm,data,overlay.event,close,overlay.instance)
                 is Overlay.EditDiary->DiaryEditor(vm,overlay.diary,close)
@@ -122,7 +129,7 @@ sealed interface Overlay {
                 is Overlay.EditCourse->CourseEditor(vm,data,overlay.course,close,overlay.instance)
                 is Overlay.Item->{
                     val item=Rules.agenda(data,LocalDate.parse(overlay.item.date)).find {it.id==overlay.item.id} ?: overlay.item
-                    AgendaDetails(vm,data,item,close,{whole->if(item.kind=="event") {val e=if(whole) data.events.find {it.id==item.ownerId}!! else item.event!!.copy(date=item.date);push(Overlay.EditEvent(e,if(whole)null else item))}else {val c=if(whole)data.courses.find{it.id==item.ownerId}!! else item.course!!;push(Overlay.EditCourse(c,if(whole)null else item))}},{focusEvent=item.event;overlays.clear();nav=3},{push(Overlay.EditCourse(it.copy(id=newId())))})
+                    AgendaDetails(vm,data,item,close,{whole->if(item.kind=="event") {val e=if(whole) data.events.find {it.id==item.ownerId}!! else item.event!!.copy(date=item.date);push(Overlay.EditEvent(e,if(whole)null else item))}else {val c=if(whole)data.courses.find{it.id==item.ownerId}!! else item.course!!;push(Overlay.EditCourse(c,if(whole)null else item))}},{focusEvent=item.event;overlays.clear();navigate(3)},{push(Overlay.EditCourse(it.copy(id=newId())))})
                 }
                 Overlay.Terms->TermManager(vm,data,close,{push(Overlay.EditTerm(it))})
                 Overlay.Table->Timetable(vm,data,close,{term->
@@ -134,8 +141,12 @@ sealed interface Overlay {
                 Overlay.Recycle->RecycleDialog(vm,data,close)
                 Overlay.HolidayInfo->HolidayDialog(vm,close)
                 Overlay.About->AboutDialog(vm,close)
+                Overlay.Profile->ProfileEditor(vm,data.settings,close)
+                Overlay.Updates->UpdateDialog(vm,close)
                 null->Unit
             }
+            val updateState by vm.app.updates.state.collectAsStateWithLifecycle()
+            if(updateState.automaticPrompt && overlays.isEmpty()) AlertDialog(onDismissRequest={vm.app.updates.dismiss()},title={Text("发现新版本 ${updateState.release?.tag}")},text={Text("可查看更新说明后选择下载，现有数据将保留。")},confirmButton={TextButton(onClick={vm.app.updates.dismiss();push(Overlay.Updates)}){Text("查看更新")}},dismissButton={TextButton(onClick={vm.app.updates.dismiss()}){Text("稍后")}})
             delete?.let {(id,title)->ConfirmDialog("移入回收站？","$title 将保留 30 天，期间可以恢复。",{delete=null},{vm.run("已移入回收站"){vm.repo.trash(id)};delete=null},"移入回收站")}
         }
     }
