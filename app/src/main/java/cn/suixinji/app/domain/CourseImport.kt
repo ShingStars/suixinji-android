@@ -26,7 +26,7 @@ object CourseImport {
         }
         require(result.isNotEmpty()) {"教学周不能为空"};return result.sorted()
     }
-    private fun validate(c:Course,t:Term) {
+    internal fun validate(c:Course,t:Term) {
         require(c.title.isNotBlank() && c.title.length<=150) {"课程名称为空或超过 150 字"}
         require(c.weekday in 1..7) {"星期需为 1–7"}
         require(c.fromSlot>=1 && c.toSlot>=c.fromSlot && c.toSlot<=t.slots.size) {"课程节次超出学期设置（共 ${t.slots.size} 节），请先调整学期"}
@@ -64,10 +64,12 @@ object CourseImport {
         return preview(courses,errors)
     }
     fun html(text:String,term:Term):CoursePreview {
+        require(text.toByteArray(Charsets.UTF_8).size<=2*1024*1024) {"课表内容超过 2 MB"}
+        MultiSchoolImport.parse(text,term)?.let {return it}
         val doc=Jsoup.parse(text);doc.outputSettings().prettyPrint(false)
         val tables=doc.select("table[id=Table1]")
-        if(tables.isEmpty() && doc.select("table").none {it.select("tr").first()?.text()?.contains("星期一")==true && it.text().contains("星期日")})return CoursePreview(emptyList(),listOf(if(doc.select("iframe").isNotEmpty()) "这是教务外层页面，请选择配套文件夹中的 content_xs.html，或保存实际课表所在框架" else "未找到苏大正方学生课表 Table1，请确认选择实际课表 HTML"))
-        val table=tables.firstOrNull() ?: doc.select("table").first { it.select("tr").first()?.text()?.let {header->listOf("星期一","星期二","星期三","星期四","星期五","星期六","星期日").all {day->day in header}}==true } // The portal exports the same table twice.
+        val table=tables.firstOrNull() ?: doc.select("table").firstOrNull { it.select("tr").first()?.text()?.let {header->listOf("星期一","星期二","星期三","星期四","星期五","星期六").all {day->day in header} && ("星期日" in header || "星期天" in header)}==true }
+        if(table==null)return CoursePreview(emptyList(),listOf(if(doc.select("iframe,frame").isNotEmpty()) "这是教务外层页面，请选择实际课表框架；苏大离线保存文件通常在配套文件夹的 content_xs.html" else "未识别课表结构。当前支持旧/新正方、带周次节次标记的强智及课程清单式 URP；可使用 CSV 模板导入。"))
         val courses=mutableListOf<Course>();val errors=mutableListOf<String>();var cells=0
         val schedule=Regex("周([一二三四五六日天])第([0-9,，、\\-]+)节\\s*\\{([^}]+)}")
         table.select("td").forEach {td->
@@ -92,7 +94,8 @@ object CourseImport {
                 previous=index+2
             }.onFailure {errors+="课程格 $cells：${it.message ?: "格式错误"}"}}
         }
-        return preview(courses,errors).copy(notes=listOf("只读取课程信息，不导入学号、姓名、网页状态或登录凭据。开学日期及节次钟点沿用目标学期，请核对。","苏大 HTML 已按提供的页面结构适配；实际在线登录及页面变更仍需安装验收。"))
+        if(courses.isEmpty() && errors.isEmpty())errors+="已找到表格，但没有识别到课程；请确认已选择学期并打开实际课表，不能导入空结果。"
+        return preview(courses,errors).let {it.copy(notes=it.notes+listOf("识别类型：旧正方。开学日期及节次钟点沿用目标学期，请核对。","学校可能修改页面结构；识别结果需核对后保存。"))}
     }
     private fun preview(courses:List<Course>,errors:List<String>):CoursePreview {
         val unique=courses.distinctBy(::key)

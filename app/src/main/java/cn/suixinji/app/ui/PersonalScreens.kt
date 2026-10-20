@@ -60,33 +60,6 @@ fun String.limitCharacters(max:Int):String=if(codePointCount(0,length)>max)subst
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable fun SchoolImport(vm:AppViewModel,term:Term,onClose:()->Unit,onRead:(String)->Unit) {
-    val context=LocalContext.current;var webView by remember {mutableStateOf<WebView?>(null)};var status by remember {mutableStateOf("请手动登录并进入“信息查询 → 学生课表”，再读取。不会保存教务密码。")};var reading by remember {mutableStateOf(false)}
-    fun external(){runCatching {context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("http://xk.suda.edu.cn/")))}.onFailure {status="没有可用浏览器，请先通过浏览器保存实际课表 HTML"}}
-    DisposableEffect(Unit){onDispose {webView?.apply {stopLoading();clearHistory();clearCache(true);destroy()};CookieManager.getInstance().removeAllCookies(null);WebStorage.getInstance().deleteAllData()}}
-    BackHandler {if(webView?.canGoBack()==true)webView?.goBack()else onClose()}
-    FullPage("苏州大学教务导入",onClose){padding->Column(Modifier.padding(padding).fillMaxSize()){
-        Text(status,Modifier.padding(12.dp),style=MaterialTheme.typography.bodySmall)
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly){
-            TextButton(onClick=::external){Text("外部浏览器 / HTTP")}
-            Button(onClick={val view=webView ?: return@Button;if(Uri.parse(view.url.orEmpty()).scheme!="https" || Uri.parse(view.url.orEmpty()).host!="xk.suda.edu.cn"){status="请先打开苏大可信 HTTPS 学生课表";return@Button};reading=true
-                view.evaluateJavascript("""(function(){let best='';function scan(w){try{let d=w.document;if(d.querySelector('table[id=Table1]')){best=d.documentElement.outerHTML;return;}for(let i=0;i<w.frames.length;i++)scan(w.frames[i]);}catch(e){}}scan(window);return best;})()"""){result->reading=false;runCatching {Json.parseToJsonElement(result).jsonPrimitive.content}.onSuccess {if(it.isBlank())status="未发现学生课表，请进入实际课表页面；跨域框架可保存 HTML 后导入" else if(it.length>2*1024*1024)status="页面过大，请改用文件导入" else onRead(it)}.onFailure {status="课表读取失败，请改用 HTML 文件导入"}}
-            },enabled=!reading){Text(if(reading)"正在读取"else "读取课表")}
-        }
-        Text("证书不可信或只能使用 HTTP 时，请在外部浏览器自行决定登录，保存课表 HTML 后返回导入。在线全流程待学校环境验收。",Modifier.padding(horizontal=12.dp,vertical=5.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.secondary)
-        AndroidView(factory={ctx->WebView(ctx).apply {
-            webView=this;settings.javaScriptEnabled=true;settings.domStorageEnabled=true;settings.allowFileAccess=false;settings.allowContentAccess=false;settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW;settings.saveFormData=false
-            CookieManager.getInstance().setAcceptThirdPartyCookies(this,false)
-            webViewClient=object:WebViewClient(){
-                override fun shouldOverrideUrlLoading(view:WebView,request:WebResourceRequest):Boolean {val u=request.url;val allowed=u.scheme=="https" && (u.host=="suda.edu.cn" || u.host?.endsWith(".suda.edu.cn")==true);if(!allowed)status="已阻止非 HTTPS 或非校方页面，请使用外部浏览器后保存 HTML";return !allowed}
-                override fun onReceivedSslError(view:WebView,handler:SslErrorHandler,error:SslError){handler.cancel();status="未能建立可信 HTTPS 连接。请使用外部浏览器并通过 HTML 文件导入。"}
-                override fun onReceivedError(view:WebView,request:WebResourceRequest,error:WebResourceError){if(request.isForMainFrame)status="教务页面暂不可达，请检查校园网络，或改用 HTML / CSV 导入"}
-            };loadUrl("https://xk.suda.edu.cn/")
-        }},modifier=Modifier.weight(1f).fillMaxWidth())
-    }}
-}
-
 @Composable fun UpdateDialog(vm:AppViewModel,onClose:()->Unit) {
     val updates=vm.app.updates;val state by updates.state.collectAsState();val data by vm.repo.state.collectAsState();var error by remember {mutableStateOf<String?>(null)}
     FormDialog("检查更新",onClose) {

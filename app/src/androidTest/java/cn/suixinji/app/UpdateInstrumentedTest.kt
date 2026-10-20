@@ -75,11 +75,27 @@ class UpdateInstrumentedTest {
         compose.onNodeWithContentDescription("课程表").performClick()
         listOf("周一","周二","周三","周四","周五","周六","周日").forEach {compose.onNodeWithText(it).assertIsDisplayed()}
         compose.onNodeWithContentDescription("导入课程").performClick()
-        compose.onNodeWithText("选择 CSV / 苏大课表 HTML").assertExists()
+        compose.onNodeWithText("选择 CSV / 教务课表 HTML").assertExists()
         compose.onAllNodesWithContentDescription("关闭").onLast().performClick()
         compose.onNodeWithContentDescription("分享课表").performClick()
         compose.waitUntil(15000){compose.onAllNodesWithText("分享 PNG 图片").fetchSemanticsNodes().isNotEmpty()}
         compose.waitUntil(15000){compose.onAllNodesWithContentDescription("完整课表预览",useUnmergedTree=true).fetchSemanticsNodes().isNotEmpty()};compose.onNodeWithContentDescription("完整课表预览",useUnmergedTree=true).assertExists();Unit
+    }
+    @Test fun multiSchoolBrowserAddressAndHttpConsent()=runBlocking {
+        repo.saveTerm(Term(startDate=LocalDate.now().toString()))
+        compose.waitUntil(10000){repo.state.value.terms.isNotEmpty()}
+        compose.onNodeWithTag("nav-1").performClick()
+        compose.onNodeWithContentDescription("课程表").performClick()
+        compose.onNodeWithContentDescription("导入课程").performClick()
+        compose.onNodeWithText("教务网页导入（多校）").performClick()
+        compose.onNodeWithText("学校教务网址").assertExists()
+        compose.onNodeWithText("打开",substring=false).performClick()
+        compose.onNodeWithText("此教务页面使用 HTTP").assertExists()
+        compose.onNodeWithText("取消",substring=false).performClick()
+        compose.onNodeWithText("学校教务网址").performTextReplacement("javascript:alert(1)")
+        compose.onNodeWithText("打开",substring=false).performClick()
+        compose.onNodeWithText("请输入完整的 http:// 或 https:// 教务网址").assertExists()
+        Unit
     }
     @Test fun updateScreenAndSignatureMismatch(){
         compose.onNodeWithTag("nav-4").performClick()

@@ -103,6 +103,9 @@ class AppInstrumentedTest {
         compose.onNodeWithContentDescription("添加课程").performClick()
         compose.waitUntil(10000){compose.onAllNodesWithTag("课程名称").fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithTag("课程名称").performTextInput("界面数学课")
+        // The new term starts today; a default Monday is before the term on Tue–Sun.
+        val dayLabel="周"+"一二三四五六日"[LocalDate.now().dayOfWeek.value-1]
+        compose.onAllNodesWithText(dayLabel).onLast().performClick()
         compose.onNodeWithText("保存").performClick()
         waitData{it.courses.any{c->c.title=="界面数学课"}}
         compose.onAllNodesWithText("界面数学课").onLast().assertIsDisplayed()

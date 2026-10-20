@@ -91,8 +91,8 @@ import java.time.LocalDate
     FormDialog("导入课程",{if(!busy)onClose()}) {
         Text("目标学期：${term.title}",fontWeight=FontWeight.SemiBold)
         Text("${term.startDate} 开学 · ${term.weeks} 周 · ${term.slots.size} 节 / 天。导入不改变这些设置，请先确认与学校一致。",style=MaterialTheme.typography.bodySmall)
-        Button(onClick={picker.launch(arrayOf("*/*"))},Modifier.fillMaxWidth(),enabled=!busy){Text("选择 CSV / 苏大课表 HTML")}
-        OutlinedButton(onClick={web=true},Modifier.fillMaxWidth(),enabled=!busy){Text("苏州大学教务导入")}
+        Button(onClick={picker.launch(arrayOf("*/*"))},Modifier.fillMaxWidth(),enabled=!busy){Text("选择 CSV / 教务课表 HTML")}
+        OutlinedButton(onClick={web=true},Modifier.fillMaxWidth(),enabled=!busy){Text("教务网页导入（多校）")}
         TextButton(onClick={template.launch("随心记课程导入模板.csv")},enabled=!busy){Text("保存 CSV 模板")}
         Text("Excel/WPS 请另存为 CSV；支持 UTF-8、GB18030。周数示例：1-16、1-16(单)、1-4,8-12。HTML 需选实际课表页面，不能只选门户外壳。",style=MaterialTheme.typography.bodySmall)
         preview?.let {p->
